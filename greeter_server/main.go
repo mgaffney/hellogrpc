@@ -25,8 +25,8 @@ import (
 	"log"
 	"net"
 
+	pb "github.com/mgaffney/grpc/helloworld/helloworld"
 	"google.golang.org/grpc"
-	pb "google.golang.org/grpc/examples/helloworld/helloworld"
 	"google.golang.org/grpc/reflection"
 )
 
