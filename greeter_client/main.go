@@ -20,7 +20,9 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"time"
 
@@ -29,29 +31,59 @@ import (
 )
 
 const (
-	address     = "localhost:50051"
-	defaultName = "world"
+	serviceAddr = "localhost:50051"
 )
 
-func main() {
+func greet(name string) (string, error) {
 	// Set up a connection to the server.
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	conn, err := grpc.Dial(serviceAddr, grpc.WithInsecure())
 	if err != nil {
-		log.Fatalf("did not connect: %v", err)
+		return "", fmt.Errorf("did not connect: %v", err)
 	}
 	defer conn.Close()
 	c := pb.NewGreeterClient(conn)
 
-	// Contact the server and print out its response.
-	name := defaultName
-	if len(os.Args) > 1 {
-		name = os.Args[1]
-	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	r, err := c.SayHello(ctx, &pb.HelloRequest{Name: name})
 	if err != nil {
-		log.Fatalf("could not greet: %v", err)
+		return "", fmt.Errorf("could not greet: %v", err)
 	}
-	log.Printf("Greeting: %s", r.Message)
+	return r.Message, nil
+}
+
+func main() {
+	// use PORT environment variable, or default to 8080
+	port := "8080"
+	if fromEnv := os.Getenv("PORT"); fromEnv != "" {
+		port = fromEnv
+	}
+
+	// register hello function to handle all requests
+	server := http.NewServeMux()
+	server.HandleFunc("/", hello)
+
+	// start the web server on port and accept requests
+	log.Printf("Server listening on port %s", port)
+	err := http.ListenAndServe(":"+port, server)
+	log.Fatal(err)
+}
+
+// hello responds to the request with a plain-text "Hello, world" message.
+func hello(w http.ResponseWriter, r *http.Request) {
+	log.Printf("Serving request: %s", r.URL.Path)
+	host, _ := os.Hostname()
+	name := r.FormValue("name")
+	if name == "" {
+		name = "world"
+	}
+	msg, err := greet(name)
+	if err != nil {
+		log.Print(err)
+		fmt.Fprintf(w, "Error getting greeting: %v\n", err)
+		msg = "sorry"
+	}
+	fmt.Fprintf(w, "Greeting: %s\n", msg)
+	fmt.Fprintf(w, "Version: 1.0.0\n")
+	fmt.Fprintf(w, "Hostname: %s\n", host)
 }
