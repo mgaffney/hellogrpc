@@ -22,8 +22,10 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
+	"os"
 
 	pb "github.com/mgaffney/grpc/helloworld/helloworld"
 	"google.golang.org/grpc"
@@ -39,7 +41,9 @@ type server struct{}
 
 // SayHello implements helloworld.GreeterServer
 func (s *server) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
-	return &pb.HelloReply{Message: "Hello, " + in.Name}, nil
+	host, _ := os.Hostname()
+	m := fmt.Sprintf("Hello, %s! I'm %s.", in.Name, host)
+	return &pb.HelloReply{Message: m}, nil
 }
 
 func main() {
