@@ -27,7 +27,7 @@ import (
 	"net"
 	"os"
 
-	pb "github.com/mgaffney/grpc/helloworld/helloworld"
+	pb "github.com/mgaffney/hellogrpc/helloworld"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
